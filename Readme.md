@@ -42,3 +42,5 @@ Key areas for improvement include:
 * Expanding and diversifying the text corpus for greater statistical validity.
 * Conducting rigorous human validation studies.
 * Implementing sophisticated statistical analyses.
+
+Link to the report https://www.overleaf.com/project/683c4dae9373bd6559cf7e14
