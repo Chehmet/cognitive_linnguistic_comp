@@ -1,0 +1,227 @@
+Abstract
+Cancer research faces challenges due to the genetic diversity within tumors and individual variability. Precision medicine aims to identify genomic and molecular factors linked to clinical outcomes, leveraging large datasets for drug discovery and patient stratification. We introduce PANDA (PAN-cancer Data Analysis web tool) (https://panda.bio.uniroma2.it), a web server designed for analyzing TCGA genomic data. A total of 32 tumor types and 10,711 samples were selected for this analysis. PANDA simplifies complex tasks such as differential expression, survival analysis, and patient stratification, incorporating clinical factors like sex, stage, and treatment history. It also enables the exploration of biological pathways and immune cell type proportion, providing insights into tumor progression. PANDA is user-friendly, designed for researchers with limited informatics expertise, and supports diverse analyses to advance cancer research.
+Keywords
+pan-cancer analysisimmune cell deconvolutioncancer biologyTCGA patient stratificationcancer genomics
+Introduction
+The advent of large-scale genomic datasets, such as those from The Cancer Genome Atlas (TCGA) [1] has significantly advanced our understanding of cancer biology and gene regulation. TCGA provides comprehensive data on gene expression, mutations, and clinical features across more than 33 cancer types, facilitating a wide range of studies, from tumor classification [2] to the identification of oncogenic pathways [3]. Despite these advances, the complexity of integrating and analyzing these datasets remains a significant challenge, particularly for experimental biologists with limited programming skills. While platforms such as cBioPortal [4,5] and GEPIA [6] provide user-friendly interfaces for exploring genomic alterations and gene expression data, they also have important limitations. cBioPortal, for instance, excels in visualizing mutational data and survival outcomes but does not support the integration of detailed clinical annotations, such as comorbidities, treatment history, or lifestyle factors into its analyses. Similarly, GEPIA specializes in gene expression and survival analysis but lacks support for mutational data and the integration of diverse clinical annotations. Other tools like TCGAbiolinks [7] and FireBrowse (FireBrowse, Broad Institute) provide advanced capabilities for genomic analysis but require extensive programming skills, making them less accessible to non-technical users. To address these gaps, we developed PANDA (PAN cancer Data Analysis web tool) (https://panda.bio.uniroma2.it), a web-based platform designed to streamline the exploration and analysis of TCGA data offering features not available in existing tools. PANDA integrates gene expression, mutational profiles, and clinically annotated data, enabling researchers to perform analyses that encompass multiple layers of information in a single, cohesive framework. For example, PANDA allows users to explore the interplay between gene expression patterns, mutational data and clinical parameters, such as menopausal status, smoking history, or treatment history. By facilitating these integrative analyses, PANDA empowers researchers to uncover novel relationships between molecular alterations and clinical outcomes. This enables comprehensive and detailed comparisons between these cohorts, facilitating a deeper understanding of disease heterogeneity. For instance, researchers can examine differences in gene expression profiles, such as comparing patients harboring mutations in a specific gene with those who are wild-type for that gene, as well as investigating variations between smokers and non-smokers, patients with documented alcohol consumption history, individuals with specific comorbidities, or those who have undergone radiation therapy versus those who have not. Such stratification, combined with the integration of clinical annotations, provides deeper insights into cancer-specific molecular mechanisms and potential therapeutic targets. PANDA also extends traditional survival analyses by integrating gene expression, mutational data, and clinical features into a unified workflow. This allows to simultaneously correlate survival outcomes with genomic and clinical variables, providing a more comprehensive perspective than is typically achievable with tools like GEPIA. Furthermore, PANDA includes interactive visualization tools that enable researchers to intuitively explore complex relationships between genomic and clinical data, making the platform easily accessible to users with minimal computational expertise.
+Unlike other platforms, which often focus on isolated data types or require advanced programming knowledge, PANDA is designed to be user-friendly and accessible. By offering an intuitive interface and diverse analytical capabilities, PANDA offers researchers with limited computational expertise access to the complexity of TCGA data. The integration of transcriptomic, mutational, and clinical data, positions PANDA as a powerful resource for tackling the challenges of modern cancer genomics research. We periodically update PANDA to reflect the latest data from TCGA and other repositories. Specifically, we plan to perform updates every six months, rerunning all precomputed analyses to ensure the platform remains up to date with the most recent datasets. Furthermore, all results generated by PANDA can be downloaded, allowing researchers to conduct further offline analyses and integrate the data with external tools.
+Materials and Methods
+The web server was developed using Django, providing a user-friendly interface for analysis (https://www.djangoproject.com/). The analytical scripts underpinning the server are written in R and Python, ensuring both flexibility and computational efficiency. The source code and installation instructions for running the analysis on-premise are available in our public GitHub repository at https://github.com/bioinformatics-torvergata/PANDA. These scripts are detailed in the following sections.
+TCGA data collection and preprocessing
+Expression data for cancer patients was downloaded from the TCGA Data Portal (https://tcga-data.nci.nih.gov) using the recommended GDC data transfer tool. We used the processed data (Level 3), which consists of normalized expression values. Specifically, for RNA sequencing data, we utilized the FPKM (Fragments Per Kilobase of transcript per Million mapped reads) normalized data. A total of 32 tumor types and 10,711 samples were selected for this analysis. PANDA is currently utilizing ENSEMBL release 104. Clinical data for the selected patients was obtained from the TCGA Pan-Cancer Clinical Data Resource [8], which provides a standardized and curated dataset. We did not perform any additional curation or processing of the clinical data beyond what is reported in the original resource. Mutation profiles for the patients were retrieved using the maftools package [9]. Every cohort is stored as a MAF object containing somatic mutations (excluding CNVs) along with the relevant clinical information. To maintain data consistency, transcriptomic and clinical datasets are updated every six months, while mutation data is dynamically fetched from Firehouse (Broad GDAC) (https://gdac.broadinstitute.org/) during each analysis run.
+Differential expression analysis
+The differential expression analysis was performed using DESeq2 withdata from the TCGA Gene Expression Quantification HTSeq – counts. To perform an analysis, users simply need to follow a straightforward process: (i) select the tumor type of interest; (ii) choose the clinical feature for patient stratification; (iii) submit the analysis. This analysis returns a table that includes the gene name, the Log2 Fold Change, which represents the calculated fold-change between conditions on a logarithmic scale, and the Adjusted p-value (padj), which is the p-value adjusted for multiple hypothesis testing to control the false discovery rate (FDR). Additionally, several graphical outputs are provided to facilitate the interpretation of results. These include an interactive Volcano Plot that highlights genes with significant differential expression; a Heatmap, offering a visual representation of gene expression levels across samples; a PCA Plot that visualizes sample clustering through Principal Component Analysis; and a Top 100 Heatmap, displaying the top 100 most differentially expressed genes. These plots can be visualized directly on the page and downloaded for further analysis. While gene and protein quantification datasets are regularly refreshed, a significant challenge lies in the inconsistent availability of clinical data within the TCGA datasets. This inconsistency can delay the incorporation of updated clinical annotations into our analyses. Efforts are ongoing to streamline the inclusion of clinical data as it becomes available, maintaining a balance between data completeness and the regularity of updates.
+Single-gene or single-protein differential expression analysis
+Differential expression analysis allows users to explore variations in the abundance of genes, miRNAs, or proteins between patients under two distinct conditions (based on the selected feature) within a given tumor type. The analysis leverages TCGA Gene Expression Quantification data, specifically FPKM (Fragments Per Kilobase of transcript per Million mapped reads), a measure of gene expression normalized for gene length and sequencing depth, to assess these differences. The results are visualized in a box plot, where the x-axis represents the two conditions being compared (e.g., male vs. female), and the y-axis displays the expression levels of the selected gene, miRNA, or protein. Statistical significance is determined using the Wilcoxon test [10], with the resulting p-value indicating the likelihood that the observed differences occurrs by chance.
+Pan-cancer differential expression analysis
+This analysis performs differential expression analysis of a gene, miRNA, or protein between two conditions across all tumors for which data on the selected feature is available. It gives users an overview of the expression of the selected gene, miRNA, or protein in different tumor types. The x-axis displays all the tumors for which data is available, while the y-axis shows the expression levels of the selected gene, miRNA, or protein. A p-value, calculated using the Wilcoxon test [10] quantifies the significance of the observed expression differences between the two groups for each tumor.
+Survival analyses
+In the survival analyses, patient samples are categorized into groups based on thresholds applied to gene expression levels, pathway activity scores (PAS), and mutation status. Thresholds are determined using the median split method, dividing patients into high and low groups for gene expression or pathway activity. Overall survival (OS) data from The Cancer Genome Atlas (TCGA) are used as time-to-event information, measured in days from diagnosis or treatment initiation until the event of interest, such as death or the last follow-up. Disease-free interval (DFI) data, representing the time from diagnosis to disease recurrence or progression, can also be utilized.
+Kaplan-Meier survival curves are generated to estimate survival probabilities over time, stratifying patients by expression levels or pathway activity [11]. For each gene, miRNA, or protein, patients are divided into two groups based on whether their expression is above or below the median, and survival differences are visualized. Statistical comparison between groups is performed using the log-rank test [12]. In these plots, the x-axis represents survival time in days, while the y-axis shows survival probability.
+For pathway analysis, samples are stratified based on PAS values, which indicate pathway activity in individual samples, pre-calculated using Gene Set Variation Analysis (GSVA) [13]. GSVA, a non-parametric method, assesses variation in gene set enrichment across samples. This approach allows the analysis of overall survival and disease-free intervals in relation to pathway activity or gene expression, offering insights into how biological pathways influence patient outcomes.
+Additionally, mutation analysis is conducted using the maftools R package [9], leveraging TCGA mutation data to explore how specific gene mutations impact survival. This enables users to examine the relationship between mutation status and prognosis in various tumor types. By integrating gene expression, pathway activity, and mutation data, the analysis provides a comprehensive view of factors influencing survival outcomes in cancer patients.
+Tumor mutational analysis
+This analysis uses the maftools library to analyze genomic data of a specific tumour from the TCGA database [9]. It generates a mutation summary image (maf summary) and a graph comparing mutation transitions and transversions (TiTv). Each graph provides a visual analysis of the mutations, highlighting key statistics and the distribution of mutations in the selected tumor.
+Oncoplot
+This analysis generates an oncoplot displaying the number of selected genes (top 10, 15, 20 or 25) most frequently mutated in a specific tumor type, using data from the TCGA database. Each column represents a sample, while the rows indicate the genes, with the mutation types highlighted in distinctive colors. This graph provides a clear overview of prevalent mutations, facilitating the identification of key genes associated with the disease.
+Somatic interaction analysis
+This analysis generates a graph of somatic interactions using the somaticInteractions function of the maftools library to analyze the interactions between mutated genes in a selected specific tumor. Users can select the number of genes to be analyzed.
+Gene mutation analysis
+This analysis produces a lollipop graph using the maftools library to visualize mutations in a specific gene within a tumor selected from the TCGA genomic data [9]. Mutations are annotated according to the Protein_Change column, which indicates the types of amino acid changes. The graph represents the frequency of mutations along the length of the gene, highlighting significant mutations at the corresponding locations.
+Differential expression based on patients mutational status
+This analysis investigates the gene expression differences between mutated and wild-type samples of a specific gene in a chosen tumor type using TCGA data. It employs the DESeq2 package to perform differential expression analysis [14]. This analysis returns a table that includes the gene name, the Log2 Fold Change (representing the calculated fold change between conditions on a logarithmic scale), and the Adjusted p-value (padj), which is the p-value adjusted for multiple testing to control the false discovery rate (FDR). Visualization includes a heatmap of sample distances, PCA plot, a heatmap of the top 50 most variable genes, and an interactive Volcano plot to highlight significant gene expression changes. The results provide insights into the impact of mutations on gene expression within the tumor context.
+Differentially mutated gene by clinical feature
+This analysis compares two cohorts of cancer patients using genomic data from TCGA to investigate genetic mutations, stratifying patients by clinical characteristics. It generates a forest plot highlighting the 10 genes with the most significant mutations between the groups, offering a visual comparison of mutational profiles. Additionally, a coBarplot is produced to illustrate the distribution of mutations across the two groups. These visualizations provide a clear overview of mutational differences, aiding in the identification of key genes associated with distinct clinical responses. The results are also available for download, allowing users to perform further analysis and explore the data offline.
+Cell-mixture deconvolution and association with pathway activity
+To estimate cellular proportions and analyze their association with pathway activity in tumor samples, we applied a computational deconvolution method and pathway enrichment analysis. The core of this approach is the use of a reference “basis matrix”, which contains gene expression profiles of specific cell types and their corresponding marker genes. These marker genes, which are either uniquely or predominantly expressed by particular cell types, serve to identify and quantify the relative abundance of each cell type in the mixed sample. We used the ImmunoStates basis matrix [15] from the MetaIntegrator R package [15], which includes profiles for 20 immune cell types, to estimate the proportions of these cell types in our samples. Mathematically, the deconvolution process involves solving a linear regression model, where the observed bulk expression values are modeled as a weighted sum of the reference expression profiles in the basis matrix. The weights correspond to the estimated proportions of each cell type, providing a cellular composition profile for each sample. To assess pathway activity, we applied single-sample Gene Set Enrichment Analysis (ssGSEA), which calculates an activity score for each pathway based on the expression of genes within a predefined set of cancer-related and immune-associated pathways [16]. These pathway activity scores provide a quantitative measure of pathway activation in each tumor sample. By correlating the cell-type proportions with the ssGSEA scores, we were able to identify significant associations between specific immune cell types and the activity of relevant biological pathways, offering insights into how cellular composition may influence tumor biology.
+Results and Discussion
+PANDA offers a unique and innovative platform for the analysis and integration of TCGA genomic data, with a distinctive focus on clinical features and mutational data. This integration of detailed clinical annotations for patient stratification is a key strength of PANDA and sets it apart from other existing web servers, which typically lack such comprehensive clinical data integration. By enabling users to stratify cancer patients based not only on genomic data but also on these crucial clinical characteristics, PANDA allows for a more nuanced exploration of cancer biology and patient outcomes. This capability offers significant potential for identifying cancer-specific alterations and potential therapeutic targets that may be linked to patient subgroups with distinct clinical profiles or mutational status. A comparative overview of PANDA and other tools is provided in Table 1.
+Table 1. Comparison between PANDA and other existing tools, highlighting PANDA’s advantage in the detailed integration of clinical data for patient stratification.
+
+Feature	PANDA	cBioPortal	GEPIA	TCGAbiolinks
+Differential expression analysis	✔	✖	✔	✔
+Survival analysis	✔	✔	✔	✔
+Mutation analysis (oncoplot, TiTv, lollipop plot, co-mutations, differential mutations)	✔	✔	✖	✔
+Advanced clinical stratification (e.g., smoking status, menopausal state, treatment history, comorbidities)	✔	✖	✖	✖
+Integration of mutational and gene expression data	✔	✔	✖	✔
+Pan-cancer analysis	✔	✖	✖	✔
+Immune cell deconvolution	✔	✖	✔	✖
+Association between pathway activity and clinical/mutational characteristics	✔	✖	✖	✖
+Differential expression analysis based on mutational status	✔	✖	✔	✔
+Association between cell deconvolution and pathway activity	✔	✖	✖	✖
+Downloadable results for offline analysis	✔	✖	✖	✔
+Regularly updated database with integrated clinical metadata	✔	✖	✖	✔
+Interactive visualizations	✔	✔	✔	✖
+User-friendly for researchers without programming experience	✔	✔	✔	✖
+Copy number alteration (CNA) analysis	✖	✔	✖	✔
+Drug-gene interaction analysis	✖	✔	✖	✖
+TCGA and GTEx expression comparison	✖	✖	✔	✖
+Researchers can use PANDA to quickly identify the most commonly mutated genes in a specific cancer type. In this case study, we demonstrate PANDA’s capabilities using pancreatic adenocarcinoma (PAAD) as a model. The biological hypothesis guiding this analysis is to understand how mutations in a key driver gene influence tumor progression, gene expression changes, and interactions with the tumor microenvironment. To address the biological question of which genes are most frequently mutated in PAAD, we utilized PANDA’s Mutation Analysis module, which identified KRAS (79% of samples) as the most frequently mutated gene, followed by TP53 (64% of samples) which identified KRAS as the most frequently mutated gene (Figure 1a), aligning with well-established findings in cancer research [[17], [18], [19]]. Given this result, we then focused on KRAS as a key driver in PAAD and examined its role in cancer progression and patient survival using PANDA's integrated analytical framework. This information provides valuable insights into the molecular drivers of PAAD, allowing researchers to investigate the functional consequences of these mutations. To further explore the impact of these mutations, we used PANDA’s Mutation Visualization tool to highlight where mutations occur within the KRAS protein, offering a better understanding of their potential impact on protein activity and disease progression (Figure 1c). Notably, all mutations fall within the K_RAS_LIKE domain, with almost all patients presenting a mutation affecting glycine 12, underscoring its critical role in PAAD emphasizing their functional relevance.
+
+Download: Download high-res image (1MB)
+Download: Download full-size image
+Figure 1. Integrative analysis of KRAS mutations and clinical data in pancreatic adenocarcinoma (PAAD) patients using PANDA. (A) Frequency of mutations in key genes, highlighting KRAS as the most frequently mutated gene (79%). (B) Co-occurrence and mutual exclusivity analysis of mutations, identifying significant associations between KRAS and TP53, and between OTUD4 and IPP (p < 0.01). (C) Visualization of mutation positions within the KRAS protein, with annotation of affected domains. (D) Comparison of differentially expressed genes between patients with mutant and wild-type KRAS. (E) Association between KRAS gene expression and overall survival (OS), showing no statistically significant correlation. (F) Association between KRAS mutations and OS, revealing that patients with KRAS mutations have significantly reduced survival (p < 0.05).
+
+Beyond mutation frequency, PANDA facilitates the identification of co-mutated genes, revealing patterns of genetic alterations that may play cooperative or exclusive roles in tumorigenesis. Using the Co-mutation Analysis module, PANDA highlights a statistically significant co-occurrence of KRAS and TP53 mutations, an association widely documented in lung adenocarcinomas and observed in approximately 40% of KRAS-mutant cases in this cancer type [20,21] (Figure 1b). Additionally, PANDA identifies a novel co-occurrence between OTOF and IPP mutations and OTUD4 and IPP mutations (p-value < 0.01). IPP regulates the actin cytoskeleton, and its expression levels have been correlated with survival in various cancers [22]. OTUD4, a deubiquitinase involved in DNA repair and protein stability, has been implicated in oncogenic processes across multiple cancers, including PAAD [23,24]. While OTUD4 has been associated with cancer progression, and IPP with survival outcomes, to the best of our knowledge it has not been previously reported making it a statistically significant finding that warrants further investigation in pancreatic cancer. Additionally, PANDA identifies cases of mutually exclusive mutations, where specific genetic alterations rarely or never occur together within the same sample. However, in this specific case, no mutually exclusive mutations were found to be statistically significant. PANDA's ability to integrate genomic and transcriptomic data enables researchers to further explore the molecular consequences of KRAS mutations. To investigate whether KRAS mutations influence gene expression, we used the Differential Expression Analysis module, which identifies differentially expressed genes between wild-type and KRAS-mutant cases (Figure 1d). Notably, genes involved in immune regulation, including those linked to natural killer (NK) cell activation, exhibit significant upregulation in KRAS-mutant samples. This aligns with previous findings suggesting that KRAS mutations can modulate the tumor microenvironment by impairing NK cell function and upregulating PD-L1 expression, thereby promoting immune evasion [25,26]. Furthermore, PANDA allows users to assess the impact of KRAS expression and mutational status on overall survival (OS). Using the Survival Analysis module, we found that while KRAS expression levels did not show a significant correlation with overall survival (OS) (Figure 1e), patients harboring KRAS mutations had a significantly worse prognosis (p-value < 0.05) (Figure 1f). This finding reinforces the clinical relevance of KRAS mutations in PAAD.
+To further validate PANDA’s analytical capabilities, we tested its ability to reproduce well-known findings in cancer genomics. The tool successfully identifies PIK3CA as a frequently mutated gene in breast cancer, with mutations present in approximately 40% of cases, as reported in the literature [27]. PANDA also confirms TP53 as the most frequently mutated gene in breast (BRCA), esophageal (ESCA), and lung adenocarcinoma (LUAD), in accordance with previous studies. Additionally, the tool detects the well-characterized GNAQ mutation in uveal melanoma (UVM) [28], a key molecular feature of this cancer type. Lastly, PANDA identifies PTEN mutations in glioblastoma multiforme (GBM), reinforcing its known role as a tumor suppressor in this malignancy[29]. These results demonstrate that PANDA not only facilitates novel hypothesis generation but also reliably reproduces well-established molecular alterations, reinforcing its credibility as a comprehensive cancer genomics analysis tool.
+Conclusion
+PANDA’s user-friendly interface, precomputed analyses, and seamless integration of genomic and clinical data streamline the research process, enabling researchers to quickly address specific biological questions and hypotheses. As new data become available, PANDA will continue to evolve, incorporating the latest clinical and genomic information to enhance its analytical capabilities. Looking ahead, future updates will integrate cutting-edge data types, such as single-cell RNA-seq, to improve resolution and enable more precise cellular profiling. Additionally, PANDA aims to extend its applicability beyond TCGA by incorporating data from other large-scale resources, thus broadening its impact on cancer research and facilitating comprehensive molecular and clinical insights. With its ability to integrate clinical stratification PANDA represents a useful tool for researchers aiming to uncover the molecular and clinical factors driving cancer progression.
+CRediT authorship contribution statement
+G. Pepe: Writing – original draft, Supervision, Investigation, Formal analysis, Conceptualization. C. Notturno Granieri: Software, Resources, Investigation, Formal analysis. R. Appierdo: Writing – original draft, Methodology, Formal analysis. G. Ausiello: Supervision. M. Helmer-Citterich: Supervision, Funding acquisition. P.F. Gherardini: Supervision, Funding acquisition.
+Funding
+Funded by the European Union – NextGenerationEU: National Center for Gene Therapy and Drugs based on RNA Technology, CN3 – Spoke 7 (code: CN00000041) to MHC and PFG and AIRC grant number IG 23539 project to MHC.
+Declaration of competing interest
+The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.
+Acknowledgments
+The results presented here are in whole or in part based on data generated by the TCGA Research Network: https://www.cancer.gov/tcga. The authors would like to express their sincere gratitude to the third-year students of the Bachelor's program in Biological Sciences (academic year 2024–2025) at the University of Tor Vergata for their valuable contribution in testing the web server.
+References
+[1]
+Cancer Genome Atlas Research Network, J.N. Weinstein, E.A. Collisson, G.B. Mills, K.R.M. Shaw, B.A. Ozenberger, K. Ellrott, I. Shmulevich, C. Sander, J.M. Stuart
+The cancer genome atlas pan-cancer analysis project
+Nature Genet., 45 (2013), pp. 1113-1120
+Google Scholar
+[2]
+K.A. Hoadley, C. Yau, T. Hinoue, D.M. Wolf, A.J. Lazar, E. Drill, R. Shen, A.M. Taylor, A.D. Cherniack, V. Thorsson, R. Akbani, R. Bowlby, C.K. Wong, M. Wiznerowicz, F. Sanchez-Vega, A.G. Robertson, B.G. Schneider, M.S. Lawrence, H. Noushmehr, T.M. Malta, C.G.A. Network, J.M. Stuart, C.C. Benz, P.W. Laird
+Cell-of-Origin Patterns Dominate the Molecular Classification of 10,000 Tumors from 33 Types of Cancer
+Cell, 173 (2018), pp. 291-304.e6
+View PDF
+View articleView in ScopusGoogle Scholar
+[3]
+F. Sanchez-Vega, M. Mina, J. Armenia, W.K. Chatila, A. Luna, K.C. La, S. Dimitriadoy, D.L. Liu, H.S. Kantheti, S. Saghafinia, D. Chakravarty, F. Daian, Q. Gao, M.H. Bailey, W.-W. Liang, S.M. Foltz, I. Shmulevich, L. Ding, Z. Heins, A. Ochoa, B. Gross, J. Gao, H. Zhang, R. Kundra, C. Kandoth, I. Bahceci, L. Dervishi, U. Dogrusoz, W. Zhou, H. Shen, P.W. Laird, G.P. Way, C.S. Greene, H. Liang, Y. Xiao, C. Wang, A. Iavarone, A.H. Berger, T.G. Bivona, A.J. Lazar, G.D. Hammer, T. Giordano, L.N. Kwong, G. McArthur, C. Huang, A.D. Tward, M.J. Frederick, F. McCormick, M. Meyerson, Cancer Genome Atlas Research Network, E.M. Van Allen, A.D. Cherniack, G. Ciriello, C. Sander, N. Schultz
+Oncogenic signaling pathways in the cancer genome atlas
+Cell, 173 (2018), pp. 321-337.e10
+View PDF
+View articleView in ScopusGoogle Scholar
+[4]
+J. Gao, B.A. Aksoy, U. Dogrusoz, G. Dresdner, B. Gross, S.O. Sumer, Y. Sun, A. Jacobsen, R. Sinha, E. Larsson, E. Cerami, C. Sander, N. Schultz
+Integrative analysis of complex cancer genomics and clinical profiles using the cBioPortal
+Sci. Signal., 6 (2013), Article l1
+Google Scholar
+[5]
+E. Cerami, J. Gao, U. Dogrusoz, B.E. Gross, S.O. Sumer, B.A. Aksoy, A. Jacobsen, C.J. Byrne, M.L. Heuer, E. Larsson, Y. Antipin, B. Reva, A.P. Goldberg, C. Sander, N. Schultz
+The cBio cancer genomics portal: an open platform for exploring multidimensional cancer genomics data
+Cancer Discov., 2 (2012), pp. 401-404
+View in ScopusGoogle Scholar
+[6]
+Z. Tang, C. Li, B. Kang, G. Gao, C. Li, Z. Zhang
+GEPIA: a web server for cancer and normal gene expression profiling and interactive analyses
+Nucleic Acids Res., 45 (2017), pp. W98-W102
+CrossrefView in ScopusGoogle Scholar
+[7]
+A. Colaprico, T.C. Silva, C. Olsen, L. Garofano, C. Cava, D. Garolini, T.S. Sabedot, T.M. Malta, S.M. Pagnotta, I. Castiglioni, M. Ceccarelli, G. Bontempi, H. Noushmehr
+TCGAbiolinks: an R/Bioconductor package for integrative analysis of TCGA data
+Nucleic Acids Res., 44 (2016), p. e71
+CrossrefView in ScopusGoogle Scholar
+[8]
+J. Liu, T. Lichtenberg, K.A. Hoadley, L.M. Poisson, A.J. Lazar, A.D. Cherniack, A.J. Kovatich, C.C. Benz, D.A. Levine, A.V. Lee, L. Omberg, D.M. Wolf, C.D. Shriver, V. Thorsson, Cancer Genome Atlas Research Network, H. Hu
+An integrated TCGA pan-cancer clinical data resource to drive high-quality survival outcome analytics
+Cell, 173 (2018), pp. 400-416.e11
+View PDF
+View articleView in ScopusGoogle Scholar
+[9]
+A. Mayakonda, D.-C. Lin, Y. Assenov, C. Plass, H.P. Koeffler
+Maftools: efficient and comprehensive analysis of somatic variants in cancer
+Genome Res., 28 (2018), pp. 1747-1756
+CrossrefView in ScopusGoogle Scholar
+[10]
+D. Rey, M. Neuhäuser
+Wilcoxon-signed-rank test
+Int. Encycloped. Stat. Sci. (2011), pp. 1658-1659
+CrossrefGoogle Scholar
+[11]
+L.J.A. Stalpers, E.L. Kaplan
+Edward L. Kaplan and the Kaplan-Meier survival curve
+BSHM Bull.: J. Br. Soc. Hist. Math. (2018), 10.1080/17498430.2018.1450055
+Google Scholar
+[12]
+J.M. Bland, D.G. Altman
+The logrank test
+BMJ, 328 (2004), p. 1073
+Google Scholar
+[13]
+S. Hänzelmann, R. Castelo, J. Guinney
+GSVA: gene set variation analysis for microarray and RNA-seq data
+BMC Bioinf., 14 (2013), p. 7
+View in ScopusGoogle Scholar
+[14]
+M.I. Love, W. Huber, S. Anders
+Moderated estimation of fold change and dispersion for RNA-seq data with DESeq2
+Genome Biol., 15 (2014), p. 550
+View in ScopusGoogle Scholar
+[15]
+F. Vallania, A. Tam, S. Lofgren, S. Schaffert, T.D. Azad, E. Bongen, W. Haynes, M. Alsup, M. Alonso, M. Davis, E. Engleman, P. Khatri
+Leveraging heterogeneity across multiple datasets increases cell-mixture deconvolution accuracy and reduces biological and technical biases
+Nature Commun., 9 (2018), p. 4735
+View in ScopusGoogle Scholar
+[16]
+A. Subramanian, P. Tamayo, V.K. Mootha, S. Mukherjee, B.L. Ebert, M.A. Gillette, A. Paulovich, S.L. Pomeroy, T.R. Golub, E.S. Lander, J.P. Mesirov
+Gene set enrichment analysis: a knowledge-based approach for interpreting genome-wide expression profiles
+PNAS, 102 (2005), pp. 15545-15550
+CrossrefView in ScopusGoogle Scholar
+[17]
+J.H. Cook, G.E.M. Melloni, D.C. Gulhan, P.J. Park, K.M. Haigis
+The origins and genetic interactions of KRAS mutations are allele- and tissue-specific
+Nature Commun., 12 (2021), pp. 1-14
+Google Scholar
+[18]
+K. Sasaki, S. Takahashi, K. Ouchi, Y. Otsuki, S. Wakayama, C. Ishioka
+Different impacts of TP53 mutations on cell cycle-related gene expression among cancer types
+Sci. Rep., 13 (2023), pp. 1-14
+Google Scholar
+[19]
+I.A. Voutsadakis
+Mutations of p53 associated with pancreatic cancer and therapeutic implications
+Ann. Hepatobiliary Pancreat. Surg., 25 (2021), pp. 315-327
+CrossrefView in ScopusGoogle Scholar
+[20]
+A. Frille, M. Boeschen, H. Wirtz, M. Stiller, H. Bläker, M. von Laffert
+co-mutations in advanced lung adenocarcinoma: comparative bioinformatic analyses suggest ambivalent character on overall survival alongside, and mutations
+Front. Oncol., 14 (2024), Article 1357583
+View in ScopusGoogle Scholar
+[21]
+F. Skoulidis, L.A. Byers, L. Diao, V.A. Papadimitrakopoulou, P. Tong, J. Izzo, C. Behrens, H. Kadara, E.R. Parra, J.R. Canales, J. Zhang, U. Giri, J. Gudikote, M.A. Cortez, C. Yang, Y. Fan, M. Peyton, L. Girard, K.R. Coombes, C. Toniatti, T.P. Heffernan, M. Choi, G.M. Frampton, V. Miller, J.N. Weinstein, R.S. Herbst, K.-K. Wong, J. Zhang, P. Sharma, G.B. Mills, W.K. Hong, J.D. Minna, J.P. Allison, A. Futreal, J. Wang, I.I. Wistuba, J.V. Heymach
+Co-occurring genomic alterations define major subsets of KRAS-mutant lung adenocarcinoma with distinct biology, immune profiles, and therapeutic vulnerabilities
+Cancer Discov., 5 (2015), pp. 860-877
+Google Scholar
+[22]
+Y.-C. Kim, M.L. Cutler
+MicroRNA-dependent targeting of RSU1 and the IPP adhesion complex regulates the PTEN/PI3K/AKT signaling pathway in breast cancer cell lines
+Int. J. Mol. Sci., 21 (2020), p. 5458
+CrossrefGoogle Scholar
+[23]
+Z. Wu, M. Qiu, Y. Guo, J. Zhao, Z. Liu, H. Wang, M. Meng, Z. Yuan, Z. Mi
+OTU deubiquitinase 4 is silenced and radiosensitizes non-small cell lung cancer cells via inhibiting DNA repair
+Cancer Cell Int., 19 (2019), p. 99
+View PDF
+View articleGoogle Scholar
+[24]
+M. Ci, G. Zhao, C. Li, R. Liu, X. Hu, J. Pan, Y. Shen, G. Zhang, Y. Li, L. Zhang, P. Liang, H. Cui
+OTUD4 promotes the progression of glioblastoma by deubiquitinating CDK1 and activating MAPK signaling pathway
+Cell Death Dis., 15 (2024), pp. 1-11
+View in ScopusGoogle Scholar
+[25]
+A. Watterson, M.A. Coelho
+Cancer immune evasion through KRAS and PD-L1 and potential therapeutic interventions
+Cell Commun. Signal, 21 (2023), p. 45
+View in ScopusGoogle Scholar
+[26]
+K.K. Shukla, P. Sharma, S. Misra
+Molecular Diagnostics in Cancer Patients
+Springer (2019)
+Google Scholar
+[27]
+K. Reinhardt, K. Stückrath, C. Hartung, S. Kaufhold, C. Uleer, V. Hanf, T. Lantzsch, S. Peschel, J. John, M. Pöhler, M. Bauer, F.K. Bürrig, E. Weigert, J. Buchmann, E.J. Kantelhardt, C. Thomssen, M. Vetter
+PIK3CA-mutations in breast cancer
+Breast Cancer Res. Treat., 196 (2022), pp. 483-493
+View at publisher
+CrossrefView in ScopusGoogle Scholar
+[28]
+E. Livingstone, A. Zaremba, S. Horn, S. Ugurel, B. Casalini, M. Schlaak, J.C. Hassel, R. Herbst, J.S. Utikal, B. Weide, R. Gutzmer, F. Meier, C. Koelsche, E. Hadaschik, A. Sucker, H. Reis, S. Merkelbach-Bruse, M. Siewert, F. Sahm, A. von Deimling, I. Cosgarea, L. Zimmer, D. Schadendorf, B. Schilling, K.G. Griewank
+GNAQ and GNA11 mutant nonuveal melanoma: a subtype distinct from both cutaneous and uveal melanoma
+Br. J. Dermatol., 183 (2020), pp. 928-939
+CrossrefView in ScopusGoogle Scholar
+[29]
+S. Zhou, H. Wang, Y. Huang, Y. Wu, Z. Lin
+The global change of gene expression pattern caused by PTEN mutation affects the prognosis of glioblastoma
+Front. Oncol., 12 (2022), Article 952521
+View in ScopusGoogle Scholar
