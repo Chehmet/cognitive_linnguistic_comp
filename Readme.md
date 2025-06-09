@@ -39,7 +39,7 @@ Texts are preprocessed for consistency (cleaning, truncation).
 
 Key areas for improvement include:
 * Developing more advanced, context-aware ML/DL models for marker detection.
-* Expanding and diversifying the text corpus for greater statistical validity (will.
+* Expanding and diversifying the text corpus for greater statistical validity (will be good to ask people for help).
 * Conducting rigorous human validation studies.
 * Implementing sophisticated statistical analyses.
 
