@@ -19,8 +19,8 @@ The project leverages `spaCy`'s `en_core_web_md` model to calculate heuristic sc
 * **Metaphoricity:** Semantic incongruity in adjective-noun and verb-noun pairs.
 * **Synesthesia:** Blending of sensory experiences in adjective-noun pairs.
 * **Associativity:** Overall semantic distance between content words.
-
-Texts are preprocessed for consistency (cleaning, truncation).
+* Semantic Prosody: The implicit positive or negative connotation of words based on their typical co-occurrence patterns.
+* Affective Valence: The emotional tone or sentiment (positive, negative, neutral) conveyed by words.
 
 ## How to Run
 
